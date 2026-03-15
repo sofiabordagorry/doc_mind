@@ -151,10 +151,6 @@ defmodule DocMindWeb.SearchLive do
 
   def handle_info(_msg, socket), do: {:noreply, socket}
 
-  defp error_to_string(:too_large), do: "File is too large (max 10 MB)"
-  defp error_to_string(:too_many_files), do: "Too many files"
-  defp error_to_string(:not_accepted), do: "Only .md and .txt files are accepted"
-
   defp assign_stats(socket) do
     chunks = DocMind.Store.Cache.get_chunks()
 

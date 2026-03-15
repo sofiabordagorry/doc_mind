@@ -38,11 +38,37 @@ defmodule DocMind.Retrieval.HybridRanker do
         {chunk.id, s / max_bm25}
       end)
 
+    # Heading-match bonus: boost chunks whose heading contains a query term.
+    query_terms = MapSet.new(BM25.tokenize(query))
+
+    heading_bonus =
+      Map.new(chunks, fn chunk ->
+        heading_tokens = BM25.tokenize(chunk.metadata[:heading] || "")
+
+        bonus =
+          cond do
+            # All heading tokens appear in the query — strong exact-name match
+            heading_tokens != [] and
+                Enum.all?(heading_tokens, &MapSet.member?(query_terms, &1)) ->
+              0.2
+
+            # At least one heading token matches — weaker signal.
+            Enum.any?(heading_tokens, &MapSet.member?(query_terms, &1)) ->
+              0.05
+
+            true ->
+              0.0
+          end
+
+        {chunk.id, bonus}
+      end)
+
     chunks
     |> Enum.map(fn chunk ->
       sem = Map.get(semantic_scores, chunk.id, 0.0)
       lex = Map.get(bm25_scores, chunk.id, 0.0)
-      hybrid = semantic_weight * sem + lexical_weight * lex
+      bonus = Map.get(heading_bonus, chunk.id, 0.0)
+      hybrid = semantic_weight * sem + lexical_weight * lex + bonus
       {chunk, hybrid}
     end)
     |> Enum.sort_by(&elem(&1, 1), :desc)

@@ -90,7 +90,8 @@ defmodule DocMind.Ingestion.HexdocsCrawler do
         [] -> Floki.find(parsed, "body")
         nodes -> nodes
       end
-      |> Floki.text(sep: "\n")
+      |> strip_noise()
+      |> nodes_to_text()
       |> clean_text()
 
     %Document{
@@ -100,6 +101,41 @@ defmodule DocMind.Ingestion.HexdocsCrawler do
       metadata: %{type: :html, title: title, url: url}
     }
   end
+
+  # Remove elements that add noise: nav, scripts, code blocks (not useful for
+  # semantic search), and sidebar/header/footer chrome.
+  defp strip_noise(nodes) do
+    Floki.filter_out(nodes, "nav, header, footer, script, style, pre, .sidebar, .nav-main")
+  end
+
+  # Walk the tree and convert HTML headings to "# text\n" markers so that the
+  # SectionChunker can split on them. All other nodes are joined with spaces so
+  # that inline <span> tokens (common in hexdocs) don't produce newline-separated
+  # fragments.
+  defp nodes_to_text(nodes) do
+    nodes
+    |> List.wrap()
+    |> Enum.map_join("\n", &node_to_text/1)
+  end
+
+  defp node_to_text({tag, _attrs, children}) when tag in ~w(h1 h2 h3 h4 h5 h6) do
+    text = Floki.text(children, sep: " ") |> String.trim()
+    "# #{text}"
+  end
+
+  defp node_to_text({tag, _attrs, children}) when tag in ~w(p li dt dd blockquote) do
+    Floki.text(children, sep: " ") |> String.trim()
+  end
+
+  defp node_to_text({tag, _attrs, children}) when tag in ~w(div section article main) do
+    nodes_to_text(children)
+  end
+
+  defp node_to_text({_tag, _attrs, children}) do
+    Floki.text(children, sep: " ") |> String.trim()
+  end
+
+  defp node_to_text(text) when is_binary(text), do: String.trim(text)
 
   defp extract_links(html, base_url) do
     {:ok, parsed} = Floki.parse_document(html)
@@ -155,7 +191,6 @@ defmodule DocMind.Ingestion.HexdocsCrawler do
   end
 
   # Drop the filename segment to get the package base path.
-  # e.g. https://hexdocs.pm/elixir/GenServer.html -> https://hexdocs.pm/elixir
   defp extract_base_url(url) do
     uri = URI.parse(url)
 

@@ -211,6 +211,7 @@ defmodule DocMind do
               existing
               |> Enum.reject(&MapSet.member?(re_indexed_sources, &1.metadata[:source]))
               |> Kernel.++(embedded)
+              |> Enum.uniq_by(& &1.text)
 
             :ok = Cache.put_chunks(all)
 

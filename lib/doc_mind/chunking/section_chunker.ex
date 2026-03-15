@@ -18,10 +18,17 @@ defmodule DocMind.Chunking.SectionChunker do
         |> split_section(max_chars, overlap)
         |> Enum.with_index()
         |> Enum.map(fn {chunk_text, chunk_idx} ->
+          # Prepend the section heading to every chunk so BM25 and semantic
+          # search can match on it directly
+          full_text =
+            if heading && heading != "Introduction",
+              do: "#{heading}\n#{chunk_text}",
+              else: chunk_text
+
           %Chunk{
             id: "#{doc.id}_#{section_idx}_#{chunk_idx}",
             document_id: doc.id,
-            text: chunk_text,
+            text: full_text,
             metadata: %{
               source: doc.source,
               heading: heading,

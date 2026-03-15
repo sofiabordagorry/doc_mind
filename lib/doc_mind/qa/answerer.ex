@@ -11,7 +11,8 @@ defmodule DocMind.QA.Answerer do
 
       case llm.complete(prompt) do
         {:ok, answer_text} ->
-          {:ok, %Answer{answer: answer_text, sources: Enum.map(results, & &1.metadata)}}
+          sources = if String.contains?(answer_text, "["), do: Enum.map(results, & &1.metadata), else: []
+          {:ok, %Answer{answer: answer_text, sources: sources}}
 
         {:error, reason} ->
           {:error, reason}

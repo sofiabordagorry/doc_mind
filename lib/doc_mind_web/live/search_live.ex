@@ -9,7 +9,7 @@ defmodule DocMindWeb.SearchLive do
 
     {:ok,
      socket
-     |> assign(:tab, :search)
+     |> assign(:tab, :ask)
      |> assign(:query, "")
      |> assign(:rerank, false)
      |> assign(:results, nil)
@@ -18,12 +18,20 @@ defmodule DocMindWeb.SearchLive do
      |> assign(:index_message, nil)
      |> assign(:index_message_type, nil)
      |> assign(:index_log, [])
+     |> assign(:source_list, [])
      |> assign_stats()}
   end
 
   @impl true
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
-    {:noreply, assign(socket, :tab, String.to_existing_atom(tab))}
+    tab_atom = case tab do
+      "search"  -> :search
+      "ask"     -> :ask
+      "index"   -> :index
+      "sources" -> :sources
+      _         -> :search
+    end
+    {:noreply, assign(socket, :tab, tab_atom)}
   end
 
   def handle_event("search", params, socket) do
@@ -108,111 +116,179 @@ defmodule DocMindWeb.SearchLive do
 
   defp assign_stats(socket) do
     chunks = DocMind.Store.Cache.get_chunks()
-    sources = chunks |> Enum.map(& &1.metadata[:source]) |> Enum.uniq() |> length()
-    assign(socket, stats: %{chunks: length(chunks), sources: sources})
+
+    source_list =
+      chunks
+      |> Enum.group_by(& &1.metadata[:source])
+      |> Enum.map(fn {source, cs} -> %{name: source || "unknown", chunks: length(cs)} end)
+      |> Enum.sort_by(& &1.name)
+
+    assign(socket,
+      stats: %{chunks: length(chunks), sources: length(source_list)},
+      source_list: source_list
+    )
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <.header>
-      DocMind
-      <:subtitle>Semantic search and QA over technical documentation</:subtitle>
-    </.header>
-
-    <p class="text-sm text-zinc-500 mt-2">
-      Index: <strong>{@stats.chunks}</strong> chunks from <strong>{@stats.sources}</strong> source(s)
-    </p>
-
-    <div class="flex gap-2 mt-6 border-b border-zinc-200">
-      <button
-        class={"pb-2 px-1 text-sm font-medium border-b-2 -mb-px transition-colors " <> if(@tab == :search, do: "border-zinc-900 text-zinc-900", else: "border-transparent text-zinc-500 hover:text-zinc-700")}
-        phx-click="switch_tab" phx-value-tab="search">
-        Search
-      </button>
-      <button
-        class={"pb-2 px-1 text-sm font-medium border-b-2 -mb-px transition-colors " <> if(@tab == :ask, do: "border-zinc-900 text-zinc-900", else: "border-transparent text-zinc-500 hover:text-zinc-700")}
-        phx-click="switch_tab" phx-value-tab="ask">
-        Ask
-      </button>
-      <button
-        class={"pb-2 px-1 text-sm font-medium border-b-2 -mb-px transition-colors " <> if(@tab == :index, do: "border-zinc-900 text-zinc-900", else: "border-transparent text-zinc-500 hover:text-zinc-700")}
-        phx-click="switch_tab" phx-value-tab="index">
-        Manage Index
-      </button>
-    </div>
-
-    <div :if={@tab in [:search, :ask]} class="mt-6">
-      <form phx-submit="search" class="space-y-3">
-        <.input
-          type="textarea"
-          name="query"
-          value={@query}
-          placeholder={if @tab == :ask, do: "What is a GenServer callback?", else: "how does supervision work?"}
-          rows="2"
-        />
-        <div class="flex items-center gap-4">
-          <.button type="submit">{if @tab == :ask, do: "Ask", else: "Search"}</.button>
-          <label class="flex items-center gap-2 text-sm text-zinc-600">
-            <input type="checkbox" name="rerank" value="true" checked={@rerank} class="rounded" />
-            Rerank results
-          </label>
-        </div>
-      </form>
-    </div>
-
-    <div :if={@tab == :search and is_list(@results)} class="mt-6 space-y-3">
-      <p :if={@results == []} class="text-sm text-zinc-500">No results found.</p>
-      <div :for={r <- @results || []} class="rounded-lg border border-zinc-200 p-4">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="text-xs font-mono bg-violet-50 text-violet-700 px-2 py-0.5 rounded">
-            {Float.round(r.score, 3)}
+    <div style="padding-top: 5rem; padding-bottom: 4rem; max-width: 42rem; margin-left: auto; margin-right: auto; padding-left: 2rem; padding-right: 2rem;">
+    <%!-- Header --%>
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 3rem;">
+      <div>
+        <h1 style="font-size: 1.875rem; font-weight: 700; letter-spacing: -0.025em;">DocMind</h1>
+        <p style="font-size: 1rem; color: oklch(var(--bc) / 0.5); margin-top: 0.5rem;">Semantic search & QA over your docs</p>
+        <div style="display: flex; gap: 1.25rem; margin-top: 1rem; font-size: 0.875rem; color: oklch(var(--bc) / 0.4);">
+          <span style="display: flex; align-items: center; gap: 0.375rem;">
+            <.icon name="hero-circle-stack-micro" class="size-4" />
+            {@stats.chunks} chunks
           </span>
-          <span class="text-xs text-zinc-500">
-            {r.metadata[:source] || r.metadata[:url] || "unknown"}
-            {if h = r.metadata[:heading], do: " — #{h}"}
+          <span style="display: flex; align-items: center; gap: 0.375rem;">
+            <.icon name="hero-document-text-micro" class="size-4" />
+            {@stats.sources} source(s)
           </span>
         </div>
-        <p class="text-sm text-zinc-700 whitespace-pre-wrap">{String.slice(r.text, 0, 600)}</p>
+      </div>
+      <DocMindWeb.Layouts.theme_toggle />
+    </div>
+
+    <%!-- Main card: tabs + form together --%>
+    <div class="border border-base-300 rounded-2xl overflow-hidden shadow-sm">
+      <%!-- Tab bar --%>
+      <div class="flex border-b border-base-300 bg-base-200/40">
+        <button
+          class={"flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 -mb-px " <> if(@tab == :ask, do: "border-primary text-primary bg-base-100", else: "border-transparent text-base-content/40 hover:text-base-content")}
+          phx-click="switch_tab" phx-value-tab="ask">
+          <.icon name="hero-chat-bubble-left-ellipsis-micro" class="size-4" /> Ask
+        </button>
+        <button
+          class={"flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 -mb-px " <> if(@tab == :search, do: "border-primary text-primary bg-base-100", else: "border-transparent text-base-content/40 hover:text-base-content")}
+          phx-click="switch_tab" phx-value-tab="search">
+          <.icon name="hero-magnifying-glass-micro" class="size-4" /> Search
+        </button>
+        <button
+          class={"flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 -mb-px " <> if(@tab == :index, do: "border-primary text-primary bg-base-100", else: "border-transparent text-base-content/40 hover:text-base-content")}
+          phx-click="switch_tab" phx-value-tab="index">
+          <.icon name="hero-arrow-up-tray-micro" class="size-4" /> Index
+        </button>
+        <button
+          class={"flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 -mb-px " <> if(@tab == :sources, do: "border-primary text-primary bg-base-100", else: "border-transparent text-base-content/40 hover:text-base-content")}
+          phx-click="switch_tab" phx-value-tab="sources">
+          <.icon name="hero-rectangle-stack-micro" class="size-4" /> Sources
+        </button>
+      </div>
+
+      <%!-- Tab body --%>
+      <div class="bg-base-100 px-6 py-6">
+        <form :if={@tab in [:search, :ask]} phx-submit="search" class="space-y-4">
+          <textarea
+            name="query"
+            rows="3"
+            class="textarea textarea-bordered w-full resize-none text-sm leading-relaxed"
+            placeholder={if @tab == :ask, do: "What is a GenServer callback?", else: "how does supervision work?"}
+          >{@query}</textarea>
+          <div class="flex items-center gap-5">
+            <button type="submit" class="btn btn-primary btn-sm px-5">
+              <.icon name={if @tab == :ask, do: "hero-sparkles-micro", else: "hero-magnifying-glass-micro"} class="size-4" />
+              {if @tab == :ask, do: "Ask", else: "Search"}
+            </button>
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" name="rerank" value="true" checked={@rerank} class="checkbox checkbox-xs" />
+              <span class="text-sm text-base-content/40">Rerank results</span>
+            </label>
+          </div>
+        </form>
+
+        <div :if={@tab == :index} class="space-y-5">
+          <div
+            :if={@index_message}
+            class={"alert text-sm " <> if(@index_message_type == :ok, do: "alert-success", else: "alert-error")}
+          >
+            <.icon name={if @index_message_type == :ok, do: "hero-check-circle-micro", else: "hero-x-circle-micro"} class="size-4" />
+            {@index_message}
+          </div>
+          <div :if={@indexing} class="alert alert-info text-sm">
+            <span class="loading loading-spinner loading-sm"></span>
+            <div>
+              <p class="font-medium">Indexing in progress…</p>
+              <p :for={line <- Enum.take(@index_log, 3)} class="font-mono text-xs opacity-60 mt-1">{line}</p>
+            </div>
+          </div>
+          <form phx-submit="index" class="space-y-4">
+            <div>
+              <p class="text-sm font-medium mb-2">Sources</p>
+              <textarea
+                name="sources"
+                rows="5"
+                class="textarea textarea-bordered w-full text-sm font-mono leading-relaxed"
+                placeholder={"One path or URL per line:\ndocs/\nREADME.md\nhttps://hexdocs.pm/elixir/GenServer.html"}
+              ></textarea>
+            </div>
+            <div class="flex items-center gap-5">
+              <button type="submit" class="btn btn-primary btn-sm px-5" disabled={@indexing}>
+                <.icon name="hero-arrow-up-tray-micro" class="size-4" /> Start indexing
+              </button>
+              <span class="text-sm text-base-content/40">Runs in the background</span>
+            </div>
+          </form>
+        </div>
+
+        <%!-- Sources tab --%>
+        <div :if={@tab == :sources}>
+          <div :if={@source_list == []} class="text-center py-10 text-base-content/30">
+            <.icon name="hero-rectangle-stack" class="size-10 mx-auto mb-3" />
+            <p class="text-sm">No sources indexed yet</p>
+          </div>
+          <div :if={@source_list != []} class="divide-y divide-base-200 -mx-6 -my-6">
+            <div
+              :for={s <- @source_list}
+              class="flex items-center justify-between px-6 py-4 hover:bg-base-200/20 transition-colors"
+            >
+              <span class="text-sm text-base-content/80 truncate mr-4">{s.name}</span>
+              <span class="badge badge-ghost badge-sm shrink-0">{s.chunks} chunks</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div :if={@tab == :ask and not is_nil(@answer)} class="mt-6">
-      <div class="rounded-lg bg-green-50 border border-green-200 p-4 text-sm leading-relaxed">
-        {@answer.answer}
+    <%!-- Search results --%>
+    <div :if={@tab == :search and is_list(@results)} class="mt-8">
+      <div :if={@results == []} class="text-center py-20 text-base-content/25">
+        <.icon name="hero-magnifying-glass" class="size-12 mx-auto mb-4" />
+        <p class="text-sm">No results found</p>
       </div>
-      <div class="mt-3 text-xs text-zinc-500">
-        <strong>Sources:</strong>
-        <span :for={s <- @answer.sources} class="block mt-1">
+      <div :if={@results != []} class="border border-base-300 rounded-2xl overflow-hidden divide-y divide-base-200">
+        <div :for={r <- @results || []} class="px-6 py-5 hover:bg-base-200/20 transition-colors">
+          <div class="flex items-center gap-2.5 mb-3">
+            <span class="badge badge-primary badge-outline badge-sm font-mono shrink-0">
+              {Float.round(r.score, 3)}
+            </span>
+            <span class="text-xs text-base-content/40 truncate">
+              {r.metadata[:source] || r.metadata[:url] || "unknown"}
+              <span :if={r.metadata[:heading]}> — {r.metadata[:heading]}</span>
+            </span>
+          </div>
+          <p class="text-sm text-base-content/75 leading-relaxed">{String.slice(r.text, 0, 500)}</p>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Ask answer --%>
+    <div :if={@tab == :ask and not is_nil(@answer)} class="mt-8 space-y-4">
+      <div class="border border-base-300 rounded-2xl px-6 py-6">
+        <p class="text-xs font-semibold text-base-content/30 uppercase tracking-widest mb-4">Answer</p>
+        <p class="text-sm leading-loose">{@answer.answer}</p>
+      </div>
+      <div :if={@answer.sources != []} class="border border-base-300 rounded-2xl px-6 py-5">
+        <p class="text-xs font-semibold text-base-content/30 uppercase tracking-widest mb-4">Sources</p>
+        <div :for={s <- @answer.sources} class="flex items-center gap-2.5 text-sm text-base-content/50 py-1.5">
+          <.icon name="hero-document-text-micro" class="size-3.5 shrink-0 text-base-content/25" />
           {s[:source] || s[:url] || "unknown"}
-          {if h = s[:heading], do: " — #{h}"}
-        </span>
+          <span :if={s[:heading]} class="text-base-content/30"> — {s[:heading]}</span>
+        </div>
       </div>
     </div>
-
-    <div :if={@tab == :index} class="mt-6">
-      <div :if={@index_message} class={"rounded-lg p-3 text-sm mb-4 " <> if(@index_message_type == :ok, do: "bg-green-50 border border-green-200 text-green-800", else: "bg-red-50 border border-red-200 text-red-800")}>
-        {@index_message}
-      </div>
-
-      <div :if={@indexing} class="text-sm text-zinc-500 italic mb-4">
-        <span class="inline-block w-3 h-3 rounded-full border-2 border-zinc-300 border-t-violet-600 animate-spin mr-1 align-middle"></span>
-        Indexing in progress...
-        <div :for={line <- Enum.reverse(@index_log)} class="mt-1 font-mono text-xs">{line}</div>
-      </div>
-
-      <form phx-submit="index" class="space-y-3">
-        <.input
-          type="textarea"
-          name="sources"
-          rows="6"
-          placeholder={"One path or URL per line:\ndocs/\nREADME.md\nhttps://hexdocs.pm/elixir/GenServer.html"}
-        />
-        <div class="flex items-center gap-4">
-          <.button type="submit" disabled={@indexing}>Start indexing</.button>
-          <span class="text-xs text-zinc-500">Runs asynchronously in the background</span>
-        </div>
-      </form>
     </div>
     """
   end

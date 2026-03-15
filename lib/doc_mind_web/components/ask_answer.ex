@@ -10,7 +10,9 @@ defmodule DocMindWeb.AskAnswer do
         <p class="text-xs font-semibold text-base-content/30 uppercase tracking-widest mb-4">
           Answer
         </p>
-        <p class="text-sm leading-loose">{@answer.answer}</p>
+        <div class="answer-content text-sm leading-loose">
+          {Phoenix.HTML.raw(Earmark.as_html!(@answer.answer))}
+        </div>
       </div>
       <div :if={@answer.sources != []} class="border border-base-300 rounded-2xl px-6 py-5">
         <p class="text-xs font-semibold text-base-content/30 uppercase tracking-widest mb-4">

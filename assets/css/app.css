@@ -103,3 +103,32 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* This file is for your main application CSS */
+
+/* Markdown answer content styles */
+.answer-content p { margin-bottom: 0.75rem; }
+.answer-content p:last-child { margin-bottom: 0; }
+.answer-content code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  background-color: oklch(from var(--color-base-300) l c h / 0.6);
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+}
+.answer-content pre {
+  background-color: var(--color-base-300);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+}
+.answer-content pre code {
+  background-color: transparent;
+  padding: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.answer-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.75rem; }
+.answer-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 0.75rem; }
+.answer-content li { margin-bottom: 0.25rem; }
+.answer-content strong { font-weight: 600; }
+.answer-content em { font-style: italic; }

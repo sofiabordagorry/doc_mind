@@ -20,7 +20,7 @@ defmodule DocMindWeb.Router do
     live "/", SearchLive, :index
   end
 
-  if Application.compile_env(:docmind, :dev_routes) do
+  if Application.compile_env(:doc_mind, :dev_routes) do
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do

@@ -43,7 +43,7 @@ defmodule DocMind.Store.Manifest do
   end
 
   defp manifest_path do
-    store_path = DocMind.Config.store_path()
+    store_path = Application.get_env(:doc_mind, :store_path)
     base = String.replace_suffix(store_path, Path.extname(store_path), "")
     base <> @manifest_suffix
   end

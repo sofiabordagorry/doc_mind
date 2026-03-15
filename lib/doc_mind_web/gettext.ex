@@ -21,5 +21,5 @@ defmodule DocMindWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext.Backend, otp_app: :docmind
+  use Gettext.Backend, otp_app: :doc_mind
 end

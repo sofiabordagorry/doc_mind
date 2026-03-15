@@ -1,5 +1,5 @@
 defmodule DocMind.Retrieval.Retriever do
-  alias DocMind.{Config, Result}
+  alias DocMind.Result
   alias DocMind.Retrieval.{HybridRanker, Reranker}
   alias DocMind.Store.Cache
 
@@ -16,7 +16,7 @@ defmodule DocMind.Retrieval.Retriever do
     top_k = Keyword.get(opts, :top_k, 5)
     rerank = Keyword.get(opts, :rerank, false)
     semantic_weight = Keyword.get(opts, :semantic_weight, 0.7)
-    adapter = Config.embedding_adapter()
+    adapter = Application.get_env(:doc_mind, :embedding_adapter)
 
     with {:ok, query_embedding} <- adapter.embed(query) do
       chunks = Cache.get_chunks() |> Enum.filter(& &1.embedding)

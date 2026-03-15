@@ -5,8 +5,8 @@ defmodule DocMind.LLM.OpenAI do
 
   @impl true
   def complete(prompt) do
-    api_key = DocMind.Config.openai_api_key()
-    model = DocMind.Config.llm_model()
+    api_key = Application.fetch_env!(:doc_mind, :openai_api_key)
+    model = Application.get_env(:doc_mind, :llm_model)
 
     case Req.post("#{@base_url}/chat/completions",
            json: %{

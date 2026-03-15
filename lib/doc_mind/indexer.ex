@@ -8,8 +8,6 @@ defmodule DocMind.Indexer do
 
   use GenServer
 
-  # --- Public API ---
-
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, :ok, Keyword.put_new(opts, :name, __MODULE__))
   end
@@ -40,8 +38,6 @@ defmodule DocMind.Indexer do
     deadline = System.monotonic_time(:millisecond) + timeout
     wait_loop(job_id, deadline)
   end
-
-  # --- GenServer callbacks ---
 
   @impl true
   def init(:ok) do
@@ -134,8 +130,6 @@ defmodule DocMind.Indexer do
         {:noreply, state}
     end
   end
-
-  # --- Private ---
 
   defp find_by_ref(jobs, ref) do
     Enum.find_value(jobs, fn {id, job} ->

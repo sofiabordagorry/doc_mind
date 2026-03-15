@@ -23,7 +23,7 @@ erl_crash.dump
 /tmp/
 
 # Ignore package tarball (built via "mix hex.build").
-docmind-*.tar
+doc_mind-*.tar
 
 # Ignore assets that are produced by build tools.
 /priv/static/assets/
@@ -35,5 +35,5 @@ docmind-*.tar
 npm-debug.log
 /assets/node_modules/
 
-# DocMind index storage
-.docmind/
+# doc_mind index storage
+.doc_mind/

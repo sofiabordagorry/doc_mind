@@ -28,7 +28,7 @@ When you index a source, DocMind runs it through a pipeline:
 1. **Load** — Files and directories are read from disk. HexDocs URLs are crawled recursively, following links within the same package.
 2. **Chunk** — Each document is split into sections based on Markdown headings, then further split if a section exceeds the max character limit (default 1200 chars, with 100-char overlap between chunks).
 3. **Embed** — Each chunk is sent to OpenAI's `text-embedding-3-small` to generate a vector embedding.
-4. **Store** — Chunks and embeddings are kept in an in-memory ETS cache and persisted to disk at `.docmind/index.bin`. A manifest file tracks content hashes so unchanged documents are skipped on re-index.
+4. **Store** — Chunks and embeddings are kept in an in-memory ETS cache and persisted to disk at `.doc_mind/index.bin`. A manifest file tracks content hashes so unchanged documents are skipped on re-index.
 
 Indexing runs asynchronously in a supervised Task. Progress is broadcast over PubSub and shown live in the UI.
 
@@ -85,15 +85,15 @@ All config can be set via environment variables or in `config/config.exs`:
 | OpenAI API key | `OPENAI_API_KEY` | — |
 | Embedding model | — | `text-embedding-3-small` |
 | LLM model | — | `gpt-4o-mini` |
-| Index path | — | `.docmind/index.bin` |
+| Index path | — | `.doc_mind/index.bin` |
 
 ```elixir
 # config/config.exs
-config :docmind,
+config :doc_mind,
   openai_api_key: "sk-...",
   embedding_model: "text-embedding-3-small",
   llm_model: "gpt-4o-mini",
-  store_path: ".docmind/index.bin"
+  store_path: ".doc_mind/index.bin"
 ```
 
 ## Using from IEx

@@ -1,10 +1,15 @@
 import Config
 
-config :docmind,
+config :doc_mind,
   namespace: DocMind,
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  embedding_model: "text-embedding-3-small",
+  llm_model: "gpt-4o-mini",
+  store_path: ".doc_mind/index.bin",
+  embedding_adapter: DocMind.Embeddings.OpenAI,
+  llm_adapter: DocMind.LLM.OpenAI
 
-config :docmind, DocMindWeb.Endpoint,
+config :doc_mind, DocMindWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
@@ -16,7 +21,7 @@ config :docmind, DocMindWeb.Endpoint,
 
 config :esbuild,
   version: "0.25.4",
-  docmind: [
+  doc_mind: [
     args:
       ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
@@ -25,7 +30,7 @@ config :esbuild,
 
 config :tailwind,
   version: "4.1.12",
-  docmind: [
+  doc_mind: [
     args: ~w(
       --input=assets/css/app.css
       --output=priv/static/assets/css/app.css

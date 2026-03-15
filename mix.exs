@@ -3,7 +3,7 @@ defmodule DocMind.MixProject do
 
   def project do
     [
-      app: :docmind,
+      app: :doc_mind,
       version: "0.1.0",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -60,10 +60,10 @@ defmodule DocMind.MixProject do
     [
       setup: ["deps.get", "assets.setup", "assets.build"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["compile", "tailwind docmind", "esbuild docmind"],
+      "assets.build": ["compile", "tailwind doc_mind", "esbuild doc_mind"],
       "assets.deploy": [
-        "tailwind docmind --minify",
-        "esbuild docmind --minify",
+        "tailwind doc_mind --minify",
+        "esbuild doc_mind --minify",
         "phx.digest"
       ],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]

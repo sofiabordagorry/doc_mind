@@ -25,8 +25,8 @@ defmodule DocMind.Embeddings.OpenAI do
   end
 
   defp embed_batch(texts) do
-    api_key = DocMind.Config.openai_api_key()
-    model = DocMind.Config.embedding_model()
+    api_key = Application.fetch_env!(:doc_mind, :openai_api_key)
+    model = Application.get_env(:doc_mind, :embedding_model)
 
     case Req.post("#{@base_url}/embeddings",
            json: %{input: texts, model: model},

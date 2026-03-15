@@ -25,17 +25,17 @@ defmodule DocMind do
 
   Or in `config/config.exs`:
 
-      config :docmind, openai_api_key: "sk-..."
+      config :doc_mind, openai_api_key: "sk-..."
 
   Optional overrides:
 
-      config :docmind,
+      config :doc_mind,
         embedding_model: "text-embedding-3-small",  # default
         llm_model: "gpt-4o-mini",                   # default
-        store_path: ".docmind/index.bin"            # default
+        store_path: ".doc_mind/index.bin"            # default
   """
 
-  alias DocMind.{Config, Chunk}
+  alias DocMind.Chunk
   alias DocMind.Ingestion.Loader
   alias DocMind.Chunking.SectionChunker
   alias DocMind.Store.{Cache, Manifest}
@@ -135,7 +135,7 @@ defmodule DocMind do
   # Called by DocMind.Indexer tasks — not part of the public API.
   @doc false
   def index_sync(paths_or_urls, opts) do
-    adapter = Config.embedding_adapter()
+    adapter = Application.get_env(:doc_mind, :embedding_adapter)
     max_chars = Keyword.get(opts, :max_chars, 1200)
     overlap = Keyword.get(opts, :overlap, 100)
     collection = Keyword.get(opts, :collection, nil)
@@ -175,7 +175,7 @@ defmodule DocMind do
              skipped: length(skipped),
              chunks: 0,
              total_chunks: length(Cache.get_chunks()),
-             store_path: Config.store_path()
+             store_path: Application.get_env(:doc_mind, :store_path)
            }}
 
         broadcast_done(result)
@@ -232,7 +232,7 @@ defmodule DocMind do
                  skipped: length(skipped),
                  chunks: length(embedded),
                  total_chunks: length(all),
-                 store_path: Config.store_path()
+                 store_path: Application.get_env(:doc_mind, :store_path)
                }}
 
             broadcast_done(result)

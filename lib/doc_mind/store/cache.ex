@@ -10,8 +10,6 @@ defmodule DocMind.Store.Cache do
 
   alias DocMind.Store.FileStore
 
-  # --- Public API ---
-
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, :ok, Keyword.put_new(opts, :name, __MODULE__))
   end
@@ -30,8 +28,6 @@ defmodule DocMind.Store.Cache do
   def clear do
     GenServer.call(__MODULE__, :clear)
   end
-
-  # --- GenServer callbacks ---
 
   @impl true
   def init(:ok) do

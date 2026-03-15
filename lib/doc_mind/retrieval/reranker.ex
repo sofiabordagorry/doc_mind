@@ -7,8 +7,6 @@ defmodule DocMind.Retrieval.Reranker do
   original order on any LLM error.
   """
 
-  alias DocMind.Config
-
   @doc """
   Rerank `results` by relevance to `query`.
 
@@ -20,7 +18,7 @@ defmodule DocMind.Retrieval.Reranker do
   def rerank(_query, [], _opts), do: {:ok, []}
 
   def rerank(query, results, _opts) do
-    llm = Config.llm_adapter()
+    llm = Application.get_env(:doc_mind, :llm_adapter)
 
     passages =
       results

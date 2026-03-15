@@ -27,7 +27,7 @@ defmodule DocMindWeb.IndexPanel do
         <.upload_zone uploads={@uploads} />
         <div>
           <p class="text-sm font-medium mb-2">
-            URLs <span class="text-base-content/30 font-normal">(optional)</span>
+            URLs
           </p>
           <textarea
             name="sources"

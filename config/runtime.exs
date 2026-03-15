@@ -1,10 +1,18 @@
 import Config
 
-if System.get_env("PHX_SERVER") do
-  config :docmind, DocMindWeb.Endpoint, server: true
+if config_env() != :test do
+  api_key =
+    System.get_env("OPENAI_API_KEY") ||
+      raise "OpenAI API key not configured. Set the OPENAI_API_KEY environment variable."
+
+  config :doc_mind, openai_api_key: api_key
 end
 
-config :docmind, DocMindWeb.Endpoint,
+if System.get_env("PHX_SERVER") do
+  config :doc_mind, DocMindWeb.Endpoint, server: true
+end
+
+config :doc_mind, DocMindWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do
@@ -17,7 +25,7 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "example.com"
 
-  config :docmind, DocMindWeb.Endpoint,
+  config :doc_mind, DocMindWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [ip: {0, 0, 0, 0, 0, 0, 0, 0}],
     secret_key_base: secret_key_base

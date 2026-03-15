@@ -1,10 +1,10 @@
 defmodule DocMind.QA.Answerer do
-  alias DocMind.{Config, Answer}
+  alias DocMind.Answer
   alias DocMind.Retrieval.Retriever
 
   def answer(query, opts \\ []) do
     top_k = Keyword.get(opts, :top_k, 5)
-    llm = Config.llm_adapter()
+    llm = Application.get_env(:doc_mind, :llm_adapter)
 
     with {:ok, results} <- Retriever.search(query, top_k: top_k) do
       prompt = build_prompt(query, results)

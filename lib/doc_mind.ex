@@ -115,6 +115,17 @@ defmodule DocMind do
     Answerer.answer(query, opts)
   end
 
+  @doc "Remove all chunks for a given source and drop it from the manifest."
+  def remove_source(source) do
+    chunks = Cache.get_chunks()
+    :ok = Cache.put_chunks(Enum.reject(chunks, &(&1.metadata[:source] == source)))
+
+    case Manifest.load() do
+      {:ok, manifest} -> Manifest.save(Map.delete(manifest, source))
+      _ -> :ok
+    end
+  end
+
   @doc "Clear the in-memory index, the on-disk store, and the manifest."
   def clear_index do
     Cache.clear()
@@ -129,8 +140,18 @@ defmodule DocMind do
     overlap = Keyword.get(opts, :overlap, 100)
     collection = Keyword.get(opts, :collection, nil)
 
+    source_labels = Keyword.get(opts, :source_labels, %{})
+
     with {:ok, docs} <- Loader.load(paths_or_urls, opts),
          {:ok, manifest} <- Manifest.load() do
+      docs =
+        Enum.map(docs, fn doc ->
+          case Map.get(source_labels, doc.source) do
+            nil -> doc
+            label -> %{doc | source: label}
+          end
+        end)
+
       broadcast_progress("Loaded #{length(docs)} document(s)...")
       IO.puts("Loaded #{length(docs)} document(s)...")
 

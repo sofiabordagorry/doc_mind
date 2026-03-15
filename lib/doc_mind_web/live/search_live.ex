@@ -20,6 +20,7 @@ defmodule DocMindWeb.SearchLive do
      |> assign(:index_log, [])
      |> assign(:source_list, [])
      |> assign(:collections, [])
+     |> allow_upload(:files, accept: ~w(.md .txt), max_entries: 100, max_file_size: 10_000_000)
      |> assign_stats()}
   end
 
@@ -65,12 +66,37 @@ defmodule DocMindWeb.SearchLive do
      |> assign(:answer, answer)}
   end
 
+  def handle_event("validate", _params, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("cancel_upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :files, ref)}
+  end
+
+  def handle_event("remove_source", %{"source" => source}, socket) do
+    DocMind.remove_source(source)
+    {:noreply, assign_stats(socket)}
+  end
+
   def handle_event("index", %{"sources" => raw} = params, socket) do
-    sources =
+    uploaded =
+      consume_uploaded_entries(socket, :files, fn %{path: tmp_path}, entry ->
+        dest = Path.join(System.tmp_dir!(), entry.client_name)
+        File.cp!(tmp_path, dest)
+        {:ok, {dest, entry.client_name}}
+      end)
+
+    upload_paths = Enum.map(uploaded, fn {path, _} -> path end)
+    source_labels = Map.new(uploaded, fn {path, name} -> {path, name} end)
+
+    text_sources =
       raw
       |> String.split("\n")
       |> Enum.map(&String.trim/1)
       |> Enum.reject(&(&1 == ""))
+
+    sources = upload_paths ++ text_sources
 
     collection =
       case String.trim(params["collection"] || "") do
@@ -84,7 +110,8 @@ defmodule DocMindWeb.SearchLive do
        |> assign(:index_message, "No sources provided.")
        |> assign(:index_message_type, :error)}
     else
-      opts = if collection, do: [collection: collection], else: []
+      opts = [source_labels: source_labels]
+      opts = if collection, do: Keyword.put(opts, :collection, collection), else: opts
       {:ok, _job_id} = DocMind.index_async(sources, opts)
 
       {:noreply,
@@ -121,6 +148,10 @@ defmodule DocMindWeb.SearchLive do
   end
 
   def handle_info(_msg, socket), do: {:noreply, socket}
+
+  defp error_to_string(:too_large), do: "File is too large (max 10 MB)"
+  defp error_to_string(:too_many_files), do: "Too many files"
+  defp error_to_string(:not_accepted), do: "Only .md and .txt files are accepted"
 
   defp assign_stats(socket) do
     chunks = DocMind.Store.Cache.get_chunks()
@@ -231,7 +262,7 @@ defmodule DocMindWeb.SearchLive do
               <p :for={line <- Enum.take(@index_log, 3)} class="font-mono text-xs opacity-60 mt-1">{line}</p>
             </div>
           </div>
-          <form phx-submit="index" class="space-y-4">
+          <form phx-submit="index" phx-change="validate" class="space-y-4">
             <div>
               <p class="text-sm font-medium mb-2">Collection <span class="text-base-content/30 font-normal">(optional)</span></p>
               <input
@@ -242,12 +273,40 @@ defmodule DocMindWeb.SearchLive do
               />
             </div>
             <div>
+              <p class="text-sm font-medium mb-2">Upload files <span class="text-base-content/30 font-normal">(.md, .txt)</span></p>
+              <div
+                phx-drop-target={@uploads.files.ref}
+                class="border-2 border-dashed border-base-300 rounded-xl p-5 text-center hover:border-primary/40 transition-colors"
+              >
+                <.icon name="hero-arrow-up-tray" class="size-7 mx-auto mb-2 text-base-content/25" />
+                <p class="text-sm text-base-content/40 mb-3">Drop files here or</p>
+                <label for={@uploads.files.ref} class="btn btn-sm btn-outline cursor-pointer">Browse files</label>
+                <.live_file_input upload={@uploads.files} class="hidden" />
+              </div>
+              <div :if={@uploads.files.entries != []} class="mt-2 space-y-1">
+                <div :for={entry <- @uploads.files.entries} class="flex items-center gap-2 text-sm py-1">
+                  <.icon name="hero-document-text-micro" class="size-3.5 text-base-content/40 shrink-0" />
+                  <span class="flex-1 truncate text-base-content/70">{entry.client_name}</span>
+                  <span class="text-xs text-base-content/30">{Float.round(entry.client_size / 1024, 1)} KB</span>
+                  <button type="button" phx-click="cancel_upload" phx-value-ref={entry.ref} class="btn btn-ghost btn-xs text-error px-1">
+                    <.icon name="hero-x-mark-micro" class="size-3.5" />
+                  </button>
+                </div>
+                <%= for entry <- @uploads.files.entries, err <- upload_errors(@uploads.files, entry) do %>
+                  <div class="text-xs text-error">{entry.client_name}: {error_to_string(err)}</div>
+                <% end %>
+                <div :for={err <- upload_errors(@uploads.files)} class="text-xs text-error">
+                  {error_to_string(err)}
+                </div>
+              </div>
+            </div>
+            <div>
               <p class="text-sm font-medium mb-2">Sources</p>
               <textarea
                 name="sources"
-                rows="5"
+                rows="4"
                 class="textarea textarea-bordered w-full text-sm font-mono leading-relaxed"
-                placeholder={"One path or URL per line:\ndocs/\nREADME.md\nhttps://hexdocs.pm/elixir/GenServer.html"}
+                placeholder={"One URL per line:\nhttps://hexdocs.pm/elixir/GenServer.html"}
               ></textarea>
             </div>
             <div class="flex items-center gap-5">
@@ -274,13 +333,22 @@ defmodule DocMindWeb.SearchLive do
               <div class="border-t border-base-200">
                 <div
                   :for={s <- c.sources}
-                  class="flex items-center px-6 py-3 hover:bg-base-200/20 transition-colors"
+                  class="flex items-center px-6 py-3 hover:bg-base-200/20 transition-colors group"
                 >
                   <.icon
                     name={if String.starts_with?(s.name, "http"), do: "hero-globe-alt-micro", else: "hero-document-text-micro"}
                     class="size-3.5 shrink-0 text-base-content/30 mr-2.5"
                   />
-                  <span class="text-sm text-base-content/80 truncate">{s.name}</span>
+                  <span class="text-sm text-base-content/80 truncate flex-1">{s.name}</span>
+                  <button
+                    type="button"
+                    phx-click="remove_source"
+                    phx-value-source={s.name}
+                    class="btn btn-ghost btn-xs text-error opacity-0 group-hover:opacity-100 transition-opacity px-1"
+                    title="Remove source"
+                  >
+                    <.icon name="hero-trash-micro" class="size-3.5" />
+                  </button>
                 </div>
               </div>
             </details>

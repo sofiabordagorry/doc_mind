@@ -6,7 +6,9 @@ defmodule DocMind.Ingestion.Loader do
 
     file_docs =
       case paths do
-        [] -> []
+        [] ->
+          []
+
         _ ->
           case FileLoader.load(paths) do
             {:ok, docs} -> docs

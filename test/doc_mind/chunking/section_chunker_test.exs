@@ -9,16 +9,18 @@ defmodule DocMind.Chunking.SectionChunkerTest do
 
   test "splits document into sections by headings" do
     {:ok, chunks} =
-      SectionChunker.chunk(doc("""
-      # Intro
-      This is the intro.
+      SectionChunker.chunk(
+        doc("""
+        # Intro
+        This is the intro.
 
-      # Setup
-      Setup instructions here.
+        # Setup
+        Setup instructions here.
 
-      # Usage
-      How to use it.
-      """))
+        # Usage
+        How to use it.
+        """)
+      )
 
     assert length(chunks) >= 3
     assert Enum.all?(chunks, &(&1.text != ""))
@@ -33,14 +35,16 @@ defmodule DocMind.Chunking.SectionChunkerTest do
 
   test "chunk ids are unique within a document" do
     {:ok, chunks} =
-      SectionChunker.chunk(doc("""
-      # A
-      text a
-      # B
-      text b
-      # C
-      text c
-      """))
+      SectionChunker.chunk(
+        doc("""
+        # A
+        text a
+        # B
+        text b
+        # C
+        text c
+        """)
+      )
 
     ids = Enum.map(chunks, & &1.id)
     assert ids == Enum.uniq(ids)

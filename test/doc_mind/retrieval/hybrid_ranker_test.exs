@@ -15,7 +15,8 @@ defmodule DocMind.Retrieval.HybridRankerTest do
       chunk("b", "elixir elixir genserver elixir", [0.0, 1.0])
     ]
 
-    query_embedding = [1.0, 0.0]  # semantically closest to chunk_a
+    # semantically closest to chunk_a
+    query_embedding = [1.0, 0.0]
 
     ranked = HybridRanker.rank("elixir genserver", chunks, query_embedding, semantic_weight: 0.5)
     assert length(ranked) == 2

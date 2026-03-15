@@ -160,7 +160,10 @@ defmodule DocMind do
           Manifest.changed?(manifest, doc.source, doc.content)
         end)
 
-      broadcast_progress("#{length(new_docs)} new/changed, #{length(skipped)} unchanged (skipped).")
+      broadcast_progress(
+        "#{length(new_docs)} new/changed, #{length(skipped)} unchanged (skipped)."
+      )
+
       IO.puts("#{length(new_docs)} new/changed, #{length(skipped)} unchanged (skipped).")
 
       if new_docs == [] do
@@ -180,7 +183,11 @@ defmodule DocMind do
       else
         new_chunks =
           Enum.flat_map(new_docs, fn doc ->
-            case SectionChunker.chunk(doc, max_chars: max_chars, overlap: overlap, collection: collection) do
+            case SectionChunker.chunk(doc,
+                   max_chars: max_chars,
+                   overlap: overlap,
+                   collection: collection
+                 ) do
               {:ok, chunks} -> chunks
               _ -> []
             end

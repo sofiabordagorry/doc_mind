@@ -149,6 +149,7 @@ defmodule DocMind.Ingestion.HexdocsCrawler do
   defp skip_url?(url) do
     uri = URI.parse(url)
     path = uri.path || ""
+
     Path.extname(path) in @skip_extensions or
       Enum.any?(skip_patterns(), &Regex.match?(&1, path))
   end

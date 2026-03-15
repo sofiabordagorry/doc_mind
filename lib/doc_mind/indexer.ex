@@ -100,7 +100,13 @@ defmodule DocMind.Indexer do
       {job_id, job} ->
         Process.demonitor(ref, [:flush])
 
-        updated = %{job | status: :done, result: result, finished_at: DateTime.utc_now(), task_ref: nil}
+        updated = %{
+          job
+          | status: :done,
+            result: result,
+            finished_at: DateTime.utc_now(),
+            task_ref: nil
+        }
 
         {:noreply, put_in(state.jobs[job_id], updated)}
 
@@ -114,7 +120,13 @@ defmodule DocMind.Indexer do
     # Task crashed
     case find_by_ref(state.jobs, ref) do
       {job_id, job} ->
-        updated = %{job | status: :error, result: reason, finished_at: DateTime.utc_now(), task_ref: nil}
+        updated = %{
+          job
+          | status: :error,
+            result: reason,
+            finished_at: DateTime.utc_now(),
+            task_ref: nil
+        }
 
         {:noreply, put_in(state.jobs[job_id], updated)}
 

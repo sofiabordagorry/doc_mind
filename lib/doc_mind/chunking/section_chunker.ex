@@ -7,6 +7,7 @@ defmodule DocMind.Chunking.SectionChunker do
   def chunk(%DocMind.Document{} = doc, opts \\ []) do
     max_chars = Keyword.get(opts, :max_chars, @max_chars)
     overlap = Keyword.get(opts, :overlap, @overlap)
+    collection = Keyword.get(opts, :collection, nil)
 
     chunks =
       doc.content
@@ -25,7 +26,8 @@ defmodule DocMind.Chunking.SectionChunker do
               source: doc.source,
               heading: heading,
               section_index: section_idx,
-              chunk_index: chunk_idx
+              chunk_index: chunk_idx,
+              collection: collection
             }
           }
         end)

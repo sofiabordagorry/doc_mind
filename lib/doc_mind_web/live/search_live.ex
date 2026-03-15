@@ -19,6 +19,7 @@ defmodule DocMindWeb.SearchLive do
      |> assign(:index_message_type, nil)
      |> assign(:index_log, [])
      |> assign(:source_list, [])
+     |> assign(:collections, [])
      |> assign_stats()}
   end
 
@@ -64,12 +65,18 @@ defmodule DocMindWeb.SearchLive do
      |> assign(:answer, answer)}
   end
 
-  def handle_event("index", %{"sources" => raw}, socket) do
+  def handle_event("index", %{"sources" => raw} = params, socket) do
     sources =
       raw
       |> String.split("\n")
       |> Enum.map(&String.trim/1)
       |> Enum.reject(&(&1 == ""))
+
+    collection =
+      case String.trim(params["collection"] || "") do
+        "" -> nil
+        name -> name
+      end
 
     if sources == [] do
       {:noreply,
@@ -77,7 +84,8 @@ defmodule DocMindWeb.SearchLive do
        |> assign(:index_message, "No sources provided.")
        |> assign(:index_message_type, :error)}
     else
-      {:ok, _job_id} = DocMind.index_async(sources)
+      opts = if collection, do: [collection: collection], else: []
+      {:ok, _job_id} = DocMind.index_async(sources, opts)
 
       {:noreply,
        socket
@@ -120,12 +128,21 @@ defmodule DocMindWeb.SearchLive do
     source_list =
       chunks
       |> Enum.group_by(& &1.metadata[:source])
-      |> Enum.map(fn {source, cs} -> %{name: source || "unknown", chunks: length(cs)} end)
+      |> Enum.map(fn {source, cs} ->
+        %{name: source || "unknown", collection: hd(cs).metadata[:collection]}
+      end)
       |> Enum.sort_by(& &1.name)
+
+    collections =
+      source_list
+      |> Enum.group_by(& &1.collection)
+      |> Enum.map(fn {coll, sources} -> %{name: coll, sources: sources} end)
+      |> Enum.sort_by(fn c -> c.name || "" end)
 
     assign(socket,
       stats: %{chunks: length(chunks), sources: length(source_list)},
-      source_list: source_list
+      source_list: source_list,
+      collections: collections
     )
   end
 
@@ -216,6 +233,15 @@ defmodule DocMindWeb.SearchLive do
           </div>
           <form phx-submit="index" class="space-y-4">
             <div>
+              <p class="text-sm font-medium mb-2">Collection <span class="text-base-content/30 font-normal">(optional)</span></p>
+              <input
+                type="text"
+                name="collection"
+                class="input input-bordered w-full text-sm"
+                placeholder="e.g. Elixir Docs, My Project…"
+              />
+            </div>
+            <div>
               <p class="text-sm font-medium mb-2">Sources</p>
               <textarea
                 name="sources"
@@ -239,14 +265,25 @@ defmodule DocMindWeb.SearchLive do
             <.icon name="hero-rectangle-stack" class="size-10 mx-auto mb-3" />
             <p class="text-sm">No sources indexed yet</p>
           </div>
-          <div :if={@source_list != []} class="divide-y divide-base-200 -mx-6 -my-6">
-            <div
-              :for={s <- @source_list}
-              class="flex items-center justify-between px-6 py-4 hover:bg-base-200/20 transition-colors"
-            >
-              <span class="text-sm text-base-content/80 truncate mr-4">{s.name}</span>
-              <span class="badge badge-ghost badge-sm shrink-0">{s.chunks} chunks</span>
-            </div>
+          <div :if={@source_list != []} class="-mx-6 -my-6 divide-y divide-base-200">
+            <details :for={c <- @collections} open class="group">
+              <summary class="flex items-center gap-2 px-6 py-3 text-xs font-semibold uppercase tracking-widest text-base-content/40 cursor-pointer select-none hover:text-base-content/60 transition-colors list-none">
+                <.icon name="hero-chevron-right-micro" class="size-3 group-open:rotate-90 transition-transform" />
+                {c.name || "Uncollected"} ({length(c.sources)})
+              </summary>
+              <div class="border-t border-base-200">
+                <div
+                  :for={s <- c.sources}
+                  class="flex items-center px-6 py-3 hover:bg-base-200/20 transition-colors"
+                >
+                  <.icon
+                    name={if String.starts_with?(s.name, "http"), do: "hero-globe-alt-micro", else: "hero-document-text-micro"}
+                    class="size-3.5 shrink-0 text-base-content/30 mr-2.5"
+                  />
+                  <span class="text-sm text-base-content/80 truncate">{s.name}</span>
+                </div>
+              </div>
+            </details>
           </div>
         </div>
       </div>

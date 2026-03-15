@@ -127,6 +127,7 @@ defmodule DocMind do
     adapter = Config.embedding_adapter()
     max_chars = Keyword.get(opts, :max_chars, 1200)
     overlap = Keyword.get(opts, :overlap, 100)
+    collection = Keyword.get(opts, :collection, nil)
 
     with {:ok, docs} <- Loader.load(paths_or_urls, opts),
          {:ok, manifest} <- Manifest.load() do
@@ -158,7 +159,7 @@ defmodule DocMind do
       else
         new_chunks =
           Enum.flat_map(new_docs, fn doc ->
-            case SectionChunker.chunk(doc, max_chars: max_chars, overlap: overlap) do
+            case SectionChunker.chunk(doc, max_chars: max_chars, overlap: overlap, collection: collection) do
               {:ok, chunks} -> chunks
               _ -> []
             end

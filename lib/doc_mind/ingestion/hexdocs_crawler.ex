@@ -135,7 +135,11 @@ defmodule DocMind.Ingestion.HexdocsCrawler do
     Floki.text(children, sep: " ") |> String.trim()
   end
 
+  defp node_to_text({:comment, _text}), do: ""
+
   defp node_to_text(text) when is_binary(text), do: String.trim(text)
+
+  defp node_to_text(_), do: ""
 
   defp extract_links(html, base_url) do
     {:ok, parsed} = Floki.parse_document(html)

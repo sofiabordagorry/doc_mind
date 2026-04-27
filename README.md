@@ -4,11 +4,20 @@ Semantic search and question-answering over your documentation. Index local file
 
 ## Getting started
 
-1. Set your OpenAI API key:
+1. Set the API key for your chosen provider (at least one is required):
 
 ```bash
+# OpenAI 
 export OPENAI_API_KEY=sk-...
+
+# Anthropic
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# HuggingFace
+export HUGGINGFACE_API_KEY=hf_...
 ```
+
+See [Configuration](#configuration) below to switch the LLM and embedding adapters.
 
 2. Install dependencies and start the server:
 

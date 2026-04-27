@@ -78,23 +78,65 @@ lib/doc_mind_web/
 
 ## Configuration
 
-All config can be set via environment variables or in `config/config.exs`:
+DocMind uses an adapter pattern for both LLM calls (Ask / Rerank) and embeddings (Index / Search). You can mix and match adapters independently.
 
-| Option | Env var | Default |
-|---|---|---|
-| OpenAI API key | `OPENAI_API_KEY` | — |
-| Embedding model | — | `text-embedding-3-small` |
-| LLM model | — | `gpt-4o-mini` |
-| Index path | — | `.doc_mind/index.bin` |
+### LLM adapter
+
+Controls which model powers the Ask feature and the optional Rerank step.
+
+| Adapter | Config key | Default model key | Default |
+|---|---|---|---|
+| `DocMind.LLM.OpenAI` | `openai_api_key` | `llm_model` | `gpt-4o-mini` |
+| `DocMind.LLM.Anthropic` | `anthropic_api_key` | `anthropic_llm_model` | `claude-haiku-4-5` |
 
 ```elixir
 # config/config.exs
+
+# OpenAI (default)
 config :doc_mind,
-  openai_api_key: "sk-...",
-  embedding_model: "text-embedding-3-small",
-  llm_model: "gpt-4o-mini",
-  store_path: ".doc_mind/index.bin"
+  llm_adapter: DocMind.LLM.OpenAI,
+  openai_api_key: System.get_env("OPENAI_API_KEY"),
+  llm_model: "gpt-4o-mini"
+
+# Anthropic
+config :doc_mind,
+  llm_adapter: DocMind.LLM.Anthropic,
+  anthropic_api_key: System.get_env("ANTHROPIC_API_KEY"),
+  anthropic_llm_model: "claude-haiku-4-5"   # any Claude model works
 ```
+
+### Embedding adapter
+
+Controls how chunks are embedded at index time and how queries are embedded at search time.
+
+| Adapter | Config key | Default model key | Default |
+|---|---|---|---|
+| `DocMind.Embeddings.OpenAI` | `openai_api_key` | `embedding_model` | `text-embedding-3-small` |
+| `DocMind.Embeddings.HuggingFace` | `huggingface_api_key` | `embedding_model` | `intfloat/e5-large-v2` |
+
+```elixir
+# config/config.exs
+
+# OpenAI (default)
+config :doc_mind,
+  embedding_adapter: DocMind.Embeddings.OpenAI,
+  openai_api_key: System.get_env("OPENAI_API_KEY"),
+  embedding_model: "text-embedding-3-small"
+
+# HuggingFace (free, runs e5-large-v2 by default)
+config :doc_mind,
+  embedding_adapter: DocMind.Embeddings.HuggingFace,
+  huggingface_api_key: System.get_env("HUGGINGFACE_API_KEY"),
+  embedding_model: "intfloat/e5-large-v2"
+```
+
+> **Note:** The embedding adapter must stay the same between indexing and search — embeddings from different models are not comparable. If you switch adapters, clear the index first with `DocMind.clear_index()`.
+
+### Other options
+
+| Key | Default | Description |
+|---|---|---|
+| `store_path` | `.doc_mind/index.bin` | Where the index is persisted to disk |
 
 ## Using from IEx
 

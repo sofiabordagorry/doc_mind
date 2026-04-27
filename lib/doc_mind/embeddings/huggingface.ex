@@ -34,7 +34,8 @@ defmodule DocMind.Embeddings.HuggingFace do
 
     case Req.post("#{@base_url}/#{model}/pipeline/feature-extraction",
            json: %{inputs: texts, normalize: true},
-           headers: [{"authorization", "Bearer #{api_key}"}]
+           headers: [{"authorization", "Bearer #{api_key}"}],
+           receive_timeout: 60_000
          ) do
       {:ok, %{status: 200, body: embeddings}} when is_list(embeddings) ->
         {:ok, embeddings}

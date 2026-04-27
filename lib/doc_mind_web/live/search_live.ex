@@ -55,7 +55,7 @@ defmodule DocMindWeb.SearchLive do
           end
 
         socket.assigns.tab == :ask ->
-          case DocMind.ask(query, top_k: 5, rerank: rerank?) do
+          case DocMind.ask(query, top_k: 8, rerank: rerank?) do
             {:ok, a} -> {nil, a, nil}
             {:error, reason} -> {nil, nil, inspect(reason)}
           end

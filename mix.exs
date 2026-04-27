@@ -53,7 +53,8 @@ defmodule DocMind.MixProject do
       {:bandit, "~> 1.5"},
       {:req, "~> 0.5"},
       {:floki, "~> 0.36"},
-      {:earmark, "~> 1.4"}
+      {:earmark, "~> 1.4"},
+      {:stemmer, "~> 1.2"}
     ]
   end
 

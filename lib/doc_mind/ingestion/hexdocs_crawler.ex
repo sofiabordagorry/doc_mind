@@ -105,7 +105,7 @@ defmodule DocMind.Ingestion.HexdocsCrawler do
   # Remove elements that add noise: nav, scripts, code blocks (not useful for
   # semantic search), and sidebar/header/footer chrome.
   defp strip_noise(nodes) do
-    Floki.filter_out(nodes, "nav, header, footer, script, style, pre, .sidebar, .nav-main")
+    Floki.filter_out(nodes, "nav, header, footer, script, style, .sidebar, .nav-main")
   end
 
   # Walk the tree and convert HTML headings to "# text\n" markers so that the
@@ -121,6 +121,11 @@ defmodule DocMind.Ingestion.HexdocsCrawler do
   defp node_to_text({tag, _attrs, children}) when tag in ~w(h1 h2 h3 h4 h5 h6) do
     text = Floki.text(children, sep: " ") |> String.trim()
     "# #{text}"
+  end
+
+  defp node_to_text({"pre", _attrs, children}) do
+    code = Floki.text(children, sep: " ") |> String.replace(~r/ {2,}/, " ") |> String.trim()
+    "```\n#{code}\n```"
   end
 
   defp node_to_text({tag, _attrs, children}) when tag in ~w(p li dt dd blockquote) do

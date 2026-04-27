@@ -4,10 +4,10 @@ config :doc_mind,
   namespace: DocMind,
   generators: [timestamp_type: :utc_datetime],
   embedding_model: "intfloat/e5-large-v2",
-  llm_model: "claude-sonnet-4-6",
+  llm_model: "gpt-5.2",
   store_path: ".doc_mind/index.bin",
   embedding_adapter: DocMind.Embeddings.HuggingFace,
-  llm_adapter: DocMind.LLM.Anthropic
+  llm_adapter: DocMind.LLM.OpenAI
 
 config :doc_mind, DocMindWeb.Endpoint,
   url: [host: "localhost"],

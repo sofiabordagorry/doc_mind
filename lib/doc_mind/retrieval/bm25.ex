@@ -25,7 +25,9 @@ defmodule DocMind.Retrieval.BM25 do
 
   defp compute_idf(terms, chunks, n) do
     Map.new(terms, fn term ->
-      df = Enum.count(chunks, &String.contains?(String.downcase(&1.text), term))
+      df = Enum.count(chunks, fn chunk ->
+        chunk.text |> tokenize() |> Enum.member?(term)
+      end)
       idf = :math.log((n - df + 0.5) / (df + 0.5) + 1)
       {term, idf}
     end)
@@ -44,12 +46,20 @@ defmodule DocMind.Retrieval.BM25 do
     end)
   end
 
+  @stopwords MapSet.new(~w(
+    the a an and or but in on at to for of is it this that with from by as are was
+    were be been being have has had do does did will would shall should may might can
+    could not no nor so if then else when how what which who whom whose where why
+  ))
+
   def tokenize(text) do
     text
     |> String.downcase()
     |> String.replace(~r/[^\w\s]/u, " ")
     |> String.split()
     |> Enum.reject(&(String.length(&1) <= 2))
+    |> Enum.reject(&MapSet.member?(@stopwords, &1))
+    |> Enum.map(&Stemmer.stem/1)
   end
 
   defp word_count(text), do: text |> String.split() |> length()

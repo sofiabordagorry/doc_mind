@@ -3,11 +3,11 @@ import Config
 config :doc_mind,
   namespace: DocMind,
   generators: [timestamp_type: :utc_datetime],
-  embedding_model: "text-embedding-3-small",
-  llm_model: "gpt-4o-mini",
+  embedding_model: "intfloat/e5-large-v2",
+  llm_model: "claude-sonnet-4-6",
   store_path: ".doc_mind/index.bin",
-  embedding_adapter: DocMind.Embeddings.OpenAI,
-  llm_adapter: DocMind.LLM.OpenAI
+  embedding_adapter: DocMind.Embeddings.HuggingFace,
+  llm_adapter: DocMind.LLM.Anthropic
 
 config :doc_mind, DocMindWeb.Endpoint,
   url: [host: "localhost"],

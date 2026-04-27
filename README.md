@@ -55,7 +55,8 @@ lib/doc_mind/
 ├── chunking/
 │   └── section_chunker.ex # Splits documents into overlapping sections
 ├── embeddings/
-│   └── openai.ex          # Batch embedding via text-embedding-3-small
+│   ├── openai.ex          # Batch embedding via OpenAI
+│   └── huggingface.ex     # Batch embedding via HuggingFace (e.g. e5-large-v2)
 ├── store/
 │   ├── cache.ex           # In-memory ETS store for chunks + embeddings
 │   ├── file_store.ex      # Binary serialization to disk
@@ -66,6 +67,10 @@ lib/doc_mind/
 │   ├── bm25.ex            # BM25 keyword scoring
 │   ├── hybrid_ranker.ex   # Combines semantic + BM25 scores
 │   └── reranker.ex        # LLM-based result reranking
+├── llm/
+│   ├── openai.ex          # LLM adapter — OpenAI chat completions
+│   ├── anthropic.ex       # LLM adapter — Anthropic Messages API
+│   └── huggingface.ex     # LLM adapter — HuggingFace text generation
 ├── qa/
 │   └── answerer.ex        # Builds RAG prompt and calls LLM
 ├── indexer.ex             # GenServer managing async indexing jobs
@@ -88,6 +93,7 @@ Controls which model powers the Ask feature and the optional Rerank step.
 |---|---|---|---|
 | `DocMind.LLM.OpenAI` | `openai_api_key` | `llm_model` | `gpt-4o-mini` |
 | `DocMind.LLM.Anthropic` | `anthropic_api_key` | `anthropic_llm_model` | `claude-haiku-4-5` |
+| `DocMind.LLM.HuggingFace` | `huggingface_api_key` | `llm_model` | `mistralai/Mistral-7B-Instruct-v0.2` |
 
 ```elixir
 # config/config.exs
@@ -103,6 +109,12 @@ config :doc_mind,
   llm_adapter: DocMind.LLM.Anthropic,
   anthropic_api_key: System.get_env("ANTHROPIC_API_KEY"),
   anthropic_llm_model: "claude-haiku-4-5"   # any Claude model works
+
+# HuggingFace (free)
+config :doc_mind,
+  llm_adapter: DocMind.LLM.HuggingFace,
+  huggingface_api_key: System.get_env("HUGGINGFACE_API_KEY"),
+  llm_model: "mistralai/Mistral-7B-Instruct-v0.2"
 ```
 
 ### Embedding adapter
@@ -112,7 +124,7 @@ Controls how chunks are embedded at index time and how queries are embedded at s
 | Adapter | Config key | Default model key | Default |
 |---|---|---|---|
 | `DocMind.Embeddings.OpenAI` | `openai_api_key` | `embedding_model` | `text-embedding-3-small` |
-| `DocMind.Embeddings.HuggingFace` | `huggingface_api_key` | `embedding_model` | `intfloat/e5-large-v2` |
+| `DocMind.Embeddings.HuggingFace` | `huggingface_api_key` | `embedding_model` | `intfloat/e5-small-v2` |
 
 ```elixir
 # config/config.exs
@@ -127,7 +139,7 @@ config :doc_mind,
 config :doc_mind,
   embedding_adapter: DocMind.Embeddings.HuggingFace,
   huggingface_api_key: System.get_env("HUGGINGFACE_API_KEY"),
-  embedding_model: "intfloat/e5-large-v2"
+  embedding_model: "intfloat/e5-small-v2"
 ```
 
 > **Note:** The embedding adapter must stay the same between indexing and search — embeddings from different models are not comparable. If you switch adapters, clear the index first with `DocMind.clear_index()`.

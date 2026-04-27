@@ -7,7 +7,7 @@ defmodule DocMind.LLM.Anthropic do
   @impl true
   def complete(prompt) do
     api_key = Application.fetch_env!(:doc_mind, :anthropic_api_key)
-    model = Application.get_env(:doc_mind, :anthropic_llm_model, "claude-haiku-4-5")
+    model = Application.get_env(:doc_mind, :llm_model, "claude-haiku-4-5")
 
     case Req.post("#{@base_url}/messages",
            json: %{

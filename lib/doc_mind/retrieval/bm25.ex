@@ -25,9 +25,11 @@ defmodule DocMind.Retrieval.BM25 do
 
   defp compute_idf(terms, chunks, n) do
     Map.new(terms, fn term ->
-      df = Enum.count(chunks, fn chunk ->
-        chunk.text |> tokenize() |> Enum.member?(term)
-      end)
+      df =
+        Enum.count(chunks, fn chunk ->
+          chunk.text |> tokenize() |> Enum.member?(term)
+        end)
+
       idf = :math.log((n - df + 0.5) / (df + 0.5) + 1)
       {term, idf}
     end)

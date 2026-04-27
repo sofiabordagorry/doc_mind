@@ -2,10 +2,11 @@ defmodule DocMindWeb.SourcesPanelTest do
   use DocMindWeb.ConnCase, async: true
 
   test "renders empty state when there are no sources" do
-    html = render_component(&DocMindWeb.SourcesPanel.sources_panel/1,
-      source_list: [],
-      collections: []
-    )
+    html =
+      render_component(&DocMindWeb.SourcesPanel.sources_panel/1,
+        source_list: [],
+        collections: []
+      )
 
     assert html =~ "No sources indexed yet"
   end
@@ -21,10 +22,11 @@ defmodule DocMindWeb.SourcesPanelTest do
       }
     ]
 
-    html = render_component(&DocMindWeb.SourcesPanel.sources_panel/1,
-      source_list: [%{name: "README.md"}, %{name: "https://hexdocs.pm/elixir/GenServer.html"}],
-      collections: collections
-    )
+    html =
+      render_component(&DocMindWeb.SourcesPanel.sources_panel/1,
+        source_list: [%{name: "README.md"}, %{name: "https://hexdocs.pm/elixir/GenServer.html"}],
+        collections: collections
+      )
 
     assert html =~ "Elixir Docs"
     assert html =~ "README.md"
@@ -42,10 +44,11 @@ defmodule DocMindWeb.SourcesPanelTest do
       }
     ]
 
-    html = render_component(&DocMindWeb.SourcesPanel.sources_panel/1,
-      source_list: [%{name: "https://hexdocs.pm/elixir"}, %{name: "local_file.md"}],
-      collections: collections
-    )
+    html =
+      render_component(&DocMindWeb.SourcesPanel.sources_panel/1,
+        source_list: [%{name: "https://hexdocs.pm/elixir"}, %{name: "local_file.md"}],
+        collections: collections
+      )
 
     assert html =~ "hero-globe-alt-micro"
     assert html =~ "hero-document-text-micro"
@@ -56,10 +59,11 @@ defmodule DocMindWeb.SourcesPanelTest do
       %{name: nil, sources: [%{name: "README.md", collection: nil}]}
     ]
 
-    html = render_component(&DocMindWeb.SourcesPanel.sources_panel/1,
-      source_list: [%{name: "README.md"}],
-      collections: collections
-    )
+    html =
+      render_component(&DocMindWeb.SourcesPanel.sources_panel/1,
+        source_list: [%{name: "README.md"}],
+        collections: collections
+      )
 
     assert html =~ ~s(phx-click="remove_source")
     assert html =~ ~s(phx-value-source="README.md")
@@ -68,10 +72,11 @@ defmodule DocMindWeb.SourcesPanelTest do
   test "renders uncollected label when collection name is nil" do
     collections = [%{name: nil, sources: [%{name: "README.md", collection: nil}]}]
 
-    html = render_component(&DocMindWeb.SourcesPanel.sources_panel/1,
-      source_list: [%{name: "README.md"}],
-      collections: collections
-    )
+    html =
+      render_component(&DocMindWeb.SourcesPanel.sources_panel/1,
+        source_list: [%{name: "README.md"}],
+        collections: collections
+      )
 
     assert html =~ "Uncollected"
   end

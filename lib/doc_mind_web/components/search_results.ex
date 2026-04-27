@@ -29,7 +29,7 @@ defmodule DocMindWeb.SearchResults do
         </span>
         <span class="text-xs text-base-content/40 truncate">
           {@result.metadata[:source] || @result.metadata[:url] || "unknown"}
-          <span :if={@result.metadata[:heading]}> — {@result.metadata[:heading]}</span>
+          <span :if={@result.metadata[:heading]}> —   {@result.metadata[:heading]}</span>
         </span>
       </div>
       <p class="text-sm text-base-content/75 leading-relaxed">

@@ -49,6 +49,15 @@ defmodule DocMindWeb.SourcesPanel do
       <span class="text-sm text-base-content/80 truncate flex-1">{@source.name}</span>
       <button
         type="button"
+        phx-click="download_source"
+        phx-value-source={@source.name}
+        class="btn btn-ghost btn-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity px-1"
+        title="Download source"
+      >
+        <.icon name="hero-arrow-down-tray-micro" class="size-3.5" />
+      </button>
+      <button
+        type="button"
         phx-click="remove_source"
         phx-value-source={@source.name}
         class="btn btn-ghost btn-xs text-error opacity-0 group-hover:opacity-100 transition-opacity px-1"

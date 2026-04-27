@@ -83,6 +83,29 @@ defmodule DocMindWeb.SearchLive do
     {:noreply, assign_stats(socket)}
   end
 
+  def handle_event("download_source", %{"source" => source}, socket) do
+    case DocMind.export_source(source) do
+      {:ok, text} ->
+        filename =
+          source
+          |> Path.basename()
+          |> String.replace(~r/[^\w.\-]/u, "_")
+          |> then(fn name ->
+            if String.ends_with?(name, [".md", ".txt"]), do: name, else: name <> ".md"
+          end)
+
+        {:noreply,
+         push_event(socket, "download", %{
+           filename: filename,
+           content: text,
+           mime: "text/markdown"
+         })}
+
+      {:error, :not_found} ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("index", %{"sources" => raw} = params, socket) do
     uploaded =
       consume_uploaded_entries(socket, :files, fn %{path: tmp_path}, entry ->

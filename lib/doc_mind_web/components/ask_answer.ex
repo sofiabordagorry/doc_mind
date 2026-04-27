@@ -29,7 +29,7 @@ defmodule DocMindWeb.AskAnswer do
     <div class="flex items-center gap-2.5 text-sm text-base-content/50 py-1.5">
       <.icon name="hero-document-text-micro" class="size-3.5 shrink-0 text-base-content/25" />
       {@source[:source] || @source[:url] || "unknown"}
-      <span :if={@source[:heading]} class="text-base-content/30"> — {@source[:heading]}</span>
+      <span :if={@source[:heading]} class="text-base-content/30"> —   {@source[:heading]}</span>
     </div>
     """
   end

@@ -115,6 +115,24 @@ defmodule DocMind do
     Answerer.answer(query, opts)
   end
 
+  @doc """
+  Export the indexed content for a source as a single text document.
+  Returns `{:ok, text}` or `{:error, :not_found}`.
+  """
+  def export_source(source) do
+    chunks =
+      Cache.get_chunks()
+      |> Enum.filter(&(&1.metadata[:source] == source))
+      |> Enum.sort_by(& &1.id)
+
+    if chunks == [] do
+      {:error, :not_found}
+    else
+      text = Enum.map_join(chunks, "\n\n", & &1.text)
+      {:ok, text}
+    end
+  end
+
   @doc "Remove all chunks for a given source and drop it from the manifest."
   def remove_source(source) do
     chunks = Cache.get_chunks()

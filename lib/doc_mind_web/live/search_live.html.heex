@@ -27,4 +27,9 @@
   <DocMindWeb.SearchResults.search_results :if={@tab == :search} results={@results} />
 
   <DocMindWeb.AskAnswer.ask_answer :if={@tab == :ask} answer={@answer} />
+
+  <div :if={@tab == :ask and not is_nil(@ask_error)} class="mt-6 border border-error/30 bg-error/5 rounded-2xl px-6 py-4">
+    <p class="text-xs font-semibold text-error/60 uppercase tracking-widest mb-2">Error</p>
+    <p class="text-sm text-error/80 font-mono break-all">{@ask_error}</p>
+  </div>
 </div>

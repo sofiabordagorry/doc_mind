@@ -14,6 +14,7 @@ defmodule DocMindWeb.SearchLive do
      |> assign(:rerank, false)
      |> assign(:results, nil)
      |> assign(:answer, nil)
+     |> assign(:ask_error, nil)
      |> assign(:indexing, false)
      |> assign(:index_message, nil)
      |> assign(:index_message_type, nil)
@@ -42,21 +43,21 @@ defmodule DocMindWeb.SearchLive do
     query = String.trim(params["query"] || "")
     rerank? = params["rerank"] == "true"
 
-    {results, answer} =
+    {results, answer, ask_error} =
       cond do
         query == "" ->
-          {nil, nil}
+          {nil, nil, nil}
 
         socket.assigns.tab == :search ->
           case DocMind.search(query, top_k: 8, rerank: rerank?) do
-            {:ok, r} -> {r, nil}
-            _ -> {[], nil}
+            {:ok, r} -> {r, nil, nil}
+            _ -> {[], nil, nil}
           end
 
         socket.assigns.tab == :ask ->
           case DocMind.ask(query, top_k: 5, rerank: rerank?) do
-            {:ok, a} -> {nil, a}
-            _ -> {nil, nil}
+            {:ok, a} -> {nil, a, nil}
+            {:error, reason} -> {nil, nil, inspect(reason)}
           end
       end
 
@@ -65,7 +66,8 @@ defmodule DocMindWeb.SearchLive do
      |> assign(:query, query)
      |> assign(:rerank, rerank?)
      |> assign(:results, results)
-     |> assign(:answer, answer)}
+     |> assign(:answer, answer)
+     |> assign(:ask_error, ask_error)}
   end
 
   def handle_event("validate", _params, socket) do

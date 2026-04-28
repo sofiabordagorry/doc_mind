@@ -8,8 +8,6 @@ defmodule DocMind.Store.Cache do
 
   use GenServer
 
-  alias DocMind.Store.FileStore
-
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, :ok, Keyword.put_new(opts, :name, __MODULE__))
   end
@@ -19,12 +17,12 @@ defmodule DocMind.Store.Cache do
     GenServer.call(__MODULE__, :get_chunks)
   end
 
-  @doc "Replace the full chunk list, persisting to disk."
+  @doc "Replace the full chunk list, persisting to the configured store."
   def put_chunks(chunks) do
     GenServer.call(__MODULE__, {:put_chunks, chunks})
   end
 
-  @doc "Clear the in-memory index and delete the on-disk file."
+  @doc "Clear the in-memory index and delete from the configured store."
   def clear do
     GenServer.call(__MODULE__, :clear)
   end
@@ -32,7 +30,7 @@ defmodule DocMind.Store.Cache do
   @impl true
   def init(:ok) do
     chunks =
-      case FileStore.load() do
+      case store().load() do
         {:ok, chunks} -> chunks
         _ -> []
       end
@@ -47,7 +45,7 @@ defmodule DocMind.Store.Cache do
 
   @impl true
   def handle_call({:put_chunks, chunks}, _from, state) do
-    case FileStore.save(chunks) do
+    case store().save(chunks) do
       :ok -> {:reply, :ok, chunks}
       {:error, reason} -> {:reply, {:error, reason}, state}
     end
@@ -55,7 +53,11 @@ defmodule DocMind.Store.Cache do
 
   @impl true
   def handle_call(:clear, _from, _state) do
-    FileStore.delete()
+    store().delete()
     {:reply, :ok, []}
+  end
+
+  defp store do
+    Application.get_env(:doc_mind, :store_backend, DocMind.Store.PgStore)
   end
 end

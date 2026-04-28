@@ -4,12 +4,11 @@ defmodule DocMind.Store.Manifest do
   Used to skip unchanged documents on re-index, avoiding redundant embedding calls.
   """
 
-  @manifest_suffix ".manifest.bin"
-
   def load do
     path = manifest_path()
 
     case File.read(path) do
+      {:ok, ""} -> {:ok, %{}}
       {:ok, binary} -> {:ok, :erlang.binary_to_term(binary)}
       {:error, :enoent} -> {:ok, %{}}
       {:error, reason} -> {:error, reason}
@@ -43,8 +42,6 @@ defmodule DocMind.Store.Manifest do
   end
 
   defp manifest_path do
-    store_path = Application.get_env(:doc_mind, :store_path)
-    base = String.replace_suffix(store_path, Path.extname(store_path), "")
-    base <> @manifest_suffix
+    Application.get_env(:doc_mind, :manifest_path, ".doc_mind/index.manifest.bin")
   end
 end

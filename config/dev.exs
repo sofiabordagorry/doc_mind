@@ -1,5 +1,14 @@
 import Config
 
+config :doc_mind, DocMind.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "doc_mind_dev",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+
 config :doc_mind, DocMindWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4000],
   check_origin: false,

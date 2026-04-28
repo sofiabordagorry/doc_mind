@@ -1,5 +1,7 @@
 import Config
 
+config :doc_mind, store_backend: DocMind.Test.FakeStore
+
 config :doc_mind, DocMindWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "W9hwdBQ5J8PTvsEaLN+qhotGbjJtDOnGTCcJ9H52/ixSbYPT5DqlMtzLeIU+kQKp",

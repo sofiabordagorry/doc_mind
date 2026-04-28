@@ -1,7 +1,7 @@
 defmodule DocMind.Retrieval.Retriever do
   alias DocMind.Result
   alias DocMind.Retrieval.{HybridRanker, Reranker}
-  alias DocMind.Store.Cache
+  alias DocMind.Store.{Cache, PgStore}
 
   @doc """
   Search the index using hybrid ranking (semantic + BM25).
@@ -19,10 +19,11 @@ defmodule DocMind.Retrieval.Retriever do
     adapter = Application.get_env(:doc_mind, :embedding_adapter)
 
     with {:ok, query_embedding} <- adapter.embed(query) do
-      chunks = Cache.get_chunks() |> Enum.filter(& &1.embedding)
+      chunks = Cache.get_chunks()
+      semantic_scores = PgStore.semantic_search(query_embedding, top_k * 4)
 
       results =
-        HybridRanker.rank(query, chunks, query_embedding, semantic_weight: semantic_weight)
+        HybridRanker.rank(query, chunks, semantic_scores, semantic_weight: semantic_weight)
         |> Enum.take(top_k)
         |> Enum.map(fn {chunk, score} ->
           %Result{score: score, text: chunk.text, metadata: chunk.metadata}

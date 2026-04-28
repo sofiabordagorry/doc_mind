@@ -3,11 +3,15 @@ import Config
 config :doc_mind,
   namespace: DocMind,
   generators: [timestamp_type: :utc_datetime],
+  ecto_repos: [DocMind.Repo],
   embedding_model: "intfloat/e5-large-v2",
   llm_model: "gpt-5.2",
-  store_path: ".doc_mind/index.bin",
+  manifest_path: ".doc_mind/index.manifest.bin",
+  store_backend: DocMind.Store.PgStore,
   embedding_adapter: DocMind.Embeddings.HuggingFace,
   llm_adapter: DocMind.LLM.OpenAI
+
+config :doc_mind, DocMind.Repo, types: DocMind.PostgrexTypes
 
 config :doc_mind, DocMindWeb.Endpoint,
   url: [host: "localhost"],

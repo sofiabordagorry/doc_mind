@@ -31,8 +31,7 @@ defmodule DocMind do
 
       config :doc_mind,
         embedding_model: "text-embedding-3-small",  # default
-        llm_model: "gpt-4o-mini",                   # default
-        store_path: ".doc_mind/index.bin"            # default
+        llm_model: "gpt-4o-mini"                    # default
   """
 
   alias DocMind.Chunk
@@ -56,7 +55,7 @@ defmodule DocMind do
 
   ## Returns
 
-      {:ok, %{documents: 3, new: 2, skipped: 1, chunks: 47, total_chunks: 47, store_path: "..."}}
+      {:ok, %{documents: 3, new: 2, skipped: 1, chunks: 47, total_chunks: 47}}
   """
   def index(paths_or_urls, opts \\ []) when is_list(paths_or_urls) do
     index_sync(paths_or_urls, opts)
@@ -192,8 +191,7 @@ defmodule DocMind do
              new: 0,
              skipped: length(skipped),
              chunks: 0,
-             total_chunks: length(Cache.get_chunks()),
-             store_path: Application.get_env(:doc_mind, :store_path)
+             total_chunks: length(Cache.get_chunks())
            }}
 
         broadcast_done(result)
@@ -250,8 +248,7 @@ defmodule DocMind do
                  new: length(new_docs),
                  skipped: length(skipped),
                  chunks: length(embedded),
-                 total_chunks: length(all),
-                 store_path: Application.get_env(:doc_mind, :store_path)
+                 total_chunks: length(all)
                }}
 
             broadcast_done(result)

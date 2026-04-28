@@ -31,6 +31,9 @@ defmodule DocMind.MixProject do
 
   defp deps do
     [
+      {:ecto_sql, "~> 3.10"},
+      {:postgrex, ">= 0.0.0"},
+      {:pgvector, "~> 0.3"},
       {:phoenix, "~> 1.8.5"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
@@ -60,7 +63,7 @@ defmodule DocMind.MixProject do
 
   defp aliases do
     [
-      setup: ["deps.get", "assets.setup", "assets.build"],
+      setup: ["deps.get", "ecto.create", "ecto.migrate", "assets.setup", "assets.build"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["compile", "tailwind doc_mind", "esbuild doc_mind"],
       "assets.deploy": [
